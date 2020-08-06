@@ -47,7 +47,7 @@ def load_data(data):
     data = json.loads(data)
     if data["Order"] == "domain":
         load_domain_key(data)
-    elif data["Order"] == "ip":
+    elif data["Order"] == "address":
         load_address_key(data)
 
 
@@ -61,7 +61,7 @@ def load_domain_key(data):
             temp.validated_addresses.append(address)
         SUBDOMAIN_LIST.append(temp)
 
-    write_output(add_domains_to_address(), order="ip")
+    write_output(add_domains_to_address(), order="address")
 
 
 def load_address_key(data):
@@ -127,13 +127,13 @@ def write_output(data=None, order=None):
         output["Order"] = "domain"
         filename = "domain_order_validation.json"
 
-    elif order == "ip":
+    elif order == "address":
         for ip, domains in data.items():
             if ip not in output["InScope"]:
                 output["InScope"][ip] = []
             for domain in domains:
                 output["InScope"][ip].append(domain)
-        output["Order"] = "ip"
+        output["Order"] = "address"
         filename = "address_order_validation.json"
 
     if not os.path.isdir(path + "/output"):
@@ -165,7 +165,7 @@ def retrieve_domain_address():
     for sub in SUBDOMAIN_LIST:
         copy_list.append(sub)
 
-    bar = FillingCirclesBar('Resolving Domains', max=len(copy_list))
+    bar = FillingCirclesBar('[*] Resolving Domains', max=len(copy_list))
 
     for i in range(len(copy_list)):
         try:
@@ -233,7 +233,7 @@ def main():
         if args["--sort"] == "domain":
             write_output(add_address_to_domain(), order="domain")
         elif args["--sort"] == "address":
-            write_output(add_domains_to_address(), order="ip")
+            write_output(add_domains_to_address(), order="address")
     else:
         write_output(add_address_to_domain(), order="domain")
 
