@@ -18,20 +18,14 @@ Options:
   # FINISH THIS FLETCH!!! This would be helpful! Tomorrow it is!
 
 """
+from progress.bar import FillingCirclesBar
 import dns.resolver
 import ipaddress
 import docopt
 import json
 import sys
 import re
-
-
-class Address(object):
-    """ Each IP Address Instance Fields """
-    def __init__(self, address):
-        self.address = address
-        self.domain_names = []
-        self.validated = False
+import os
 
 
 class SubDomain(object):
@@ -43,6 +37,8 @@ class SubDomain(object):
 
 IP_LIST = []
 SUBDOMAIN_LIST = []
+path = (os.path.dirname(os.path.realpath(__file__)))
+order = "domain"
 
 
 def load_data(data):
@@ -119,7 +115,7 @@ def add_domains_to_address():
     return temp
 
 
-def write_output(data, order=None):
+def write_output(data=None, order=None):
     """ Saves the output to a file """
     output = {"Order": None, "InScope": {}, "OutScope": {}}
 
@@ -140,7 +136,10 @@ def write_output(data, order=None):
         output["Order"] = "ip"
         filename = "address_order_validation.json"
 
-    with open(filename, "w") as handle:
+    if not os.path.isdir(path + "/output"):
+        os.makedirs(path + "/output")
+
+    with open(path + "/output/%s" % filename, "w") as handle:
         handle.write(json.dumps(output))
 
     sys.exit()
@@ -166,6 +165,8 @@ def retrieve_domain_address():
     for sub in SUBDOMAIN_LIST:
         copy_list.append(sub)
 
+    bar = FillingCirclesBar('Resolving Domains', max=len(copy_list))
+
     for i in range(len(copy_list)):
         try:
             answers = resolver.resolve("%s" % copy_list[i].name, "A")
@@ -177,6 +178,8 @@ def retrieve_domain_address():
         except dns.resolver.NXDOMAIN:
             SUBDOMAIN_LIST.pop(i)
             continue
+        bar.next()
+    bar.finish()
 
 
 def generate_sub_domain_list(input_file):
@@ -198,9 +201,9 @@ def generate_ip_list(input_file):
         if re.search(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d{1,2}$", line):
             network = ipaddress.ip_network(line)
             for host in network.hosts():
-                IP_LIST.append(Address(host.__str__()))
+                IP_LIST.append(host.__str__())
         elif re.search(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", line):
-            IP_LIST.append(Address(line))
+            IP_LIST.append(line)
 
 
 def main():
@@ -212,19 +215,27 @@ def main():
 
     if not args["--input"]:
         print("[*] Specify IP Input File")
+        sys.exit()
 
     if not args["--sub"]:
         print("[*] Specify SubDomain List")
+        sys.exit()
 
-    ip_input = open(args["--input"], "r").readlines()
-    sub_input = open(args["--sub"], "r").readlines()
+    ''' Generate Instances '''
+    generate_ip_list(open(args["--input"], "r").readlines())
+    generate_sub_domain_list(open(args["--sub"], "r").readlines())
 
-    generate_ip_list(ip_input)
-    generate_sub_domain_list(sub_input)
+    ''' Perform Resolution and Validation '''
     retrieve_domain_address()
     validate_scope()
-    write_output()
-    sys.exit()
+
+    if args["--sort"]:
+        if args["--sort"] == "domain":
+            write_output(add_address_to_domain(), order="domain")
+        elif args["--sort"] == "address":
+            write_output(add_domains_to_address(), order="ip")
+    else:
+        write_output(add_address_to_domain(), order="domain")
 
 
 if __name__ == "__main__":
