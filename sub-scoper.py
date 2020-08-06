@@ -15,8 +15,6 @@ Options:
   -h --help     Show this screen.
   --version     Show version.
 
-  # FINISH THIS FLETCH!!! This would be helpful! Tomorrow it is!
-
 """
 from progress.bar import FillingCirclesBar
 import dns.resolver
