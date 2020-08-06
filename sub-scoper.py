@@ -140,7 +140,7 @@ def write_output(data=None, order=None):
         os.makedirs(path + "/output")
 
     with open(path + "/output/%s" % filename, "w") as handle:
-        handle.write(json.dumps(output))
+        handle.write(json.dumps(output, indent=4))
 
     sys.exit()
 
