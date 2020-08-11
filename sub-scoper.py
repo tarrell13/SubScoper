@@ -4,12 +4,14 @@
 Usage:
   sub_scoper.py -s SUBDOMAIN_LIST -i IP_LIST [ --sort ORDER_TYPE ]
   sub_scoper.py --reorder OUTPUT_FILE
+  sub_scoper.py --domains-only OUTPUT_FILE
   sub_scoper.py (-h | --help)
   sub_scoper.py --version
 
 Options:
   -i IP_LIST --input IP_LIST                File with IP addresses to validate against
   -s SUBDOMAIN_LIST --sub SUBDOMAIN_LIST    File containing SubDomains to check
+  --domains-only OUTPUT_FILE                Outputs all the domains that were validated
   --reorder OUTPUT_FILE                     Reverses the sorting order of the output file
   --sort ORDER_TYPE                         Sort by 'domain' or 'address' DEFAULT is domain
   -h --help     Show this screen.
@@ -39,17 +41,17 @@ path = (os.path.dirname(os.path.realpath(__file__)))
 order = "domain"
 
 
-def load_data(data):
+def load_data(data, domain_only=False):
     """ Loads Data """
 
     data = json.loads(data)
     if data["Order"] == "domain":
-        load_domain_key(data)
+        load_domain_key(data, domain_only=domain_only)
     elif data["Order"] == "address":
-        load_address_key(data)
+        load_address_key(data, domain_only=domain_only)
 
 
-def load_domain_key(data):
+def load_domain_key(data, domain_only=False):
     """ Loads Data if Domain is Key """
     global SUBDOMAIN_LIST
 
@@ -59,10 +61,19 @@ def load_domain_key(data):
             temp.validated_addresses.append(address)
         SUBDOMAIN_LIST.append(temp)
 
-    write_output(add_domains_to_address(), order="address")
+    if domain_only:
+        output_domains(add_domains_to_address())
+    else:
+        write_output(add_domains_to_address(), order="address")
 
 
-def load_address_key(data):
+def output_domains(data):
+    """ Outputs only domains """
+    for sub in SUBDOMAIN_LIST:
+        print(sub.name)
+
+
+def load_address_key(data, domain_only=False):
     """ Loads Data if Address is Key """
     global SUBDOMAIN_LIST
 
@@ -82,7 +93,10 @@ def load_address_key(data):
             temp.validated_addresses.append(address)
         SUBDOMAIN_LIST.append(temp)
 
-    write_output(add_address_to_domain(), order="domain")
+    if domain_only:
+        output_domains(add_address_to_domain())
+    else:
+        write_output(add_address_to_domain(), order="domain")
 
 
 def add_address_to_domain():
@@ -218,6 +232,10 @@ def main():
 
     if args["--reorder"]:
         load_data(open(args["--reorder"], "r").read())
+
+    if args["--domains-only"]:
+        load_data(open(args["--domains-only"], "r").read(), domain_only=True)
+        sys.exit()
 
     if not args["--input"]:
         print("[*] Specify IP Input File")
