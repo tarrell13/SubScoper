@@ -158,26 +158,34 @@ def retrieve_domain_address():
     global SUBDOMAIN_LIST
 
     resolver = dns.resolver.Resolver()
-    copy_list = []
+    pop_list = []
 
-    for sub in SUBDOMAIN_LIST:
-        copy_list.append(sub)
+    bar = FillingCirclesBar('[*] Resolving Domains', max=len(SUBDOMAIN_LIST))
 
-    bar = FillingCirclesBar('[*] Resolving Domains', max=len(copy_list))
-
-    for i in range(len(copy_list)):
+    for i in range(len(SUBDOMAIN_LIST)):
         try:
-            answers = resolver.resolve("%s" % copy_list[i].name, "A")
+            answers = resolver.resolve("%s" % SUBDOMAIN_LIST[i].name, "A")
             for response in answers:
-                copy_list[i].resolved_addresses.append(response.to_text())
+                SUBDOMAIN_LIST[i].resolved_addresses.append(response.to_text())
         except dns.resolver.NoAnswer:
-            SUBDOMAIN_LIST.pop(i)
-            continue
+            pop_list.append(SUBDOMAIN_LIST[i])
         except dns.resolver.NXDOMAIN:
-            SUBDOMAIN_LIST.pop(i)
-            continue
+            pop_list.append(SUBDOMAIN_LIST[i])
         bar.next()
     bar.finish()
+
+    SUBDOMAIN_LIST = adjust_list(pop_list)
+
+
+def adjust_list(remove_list):
+    """ Removes items from main list """
+    temp = []
+
+    for sub in SUBDOMAIN_LIST:
+        if sub not in remove_list:
+            temp.append(sub)
+
+    return temp
 
 
 def generate_sub_domain_list(input_file):
