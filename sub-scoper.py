@@ -228,7 +228,7 @@ def generate_ip_list(input_file):
 
 def main():
 
-    args = docopt.docopt(__doc__, version='v1.0')
+    args = docopt.docopt(__doc__, version='v1.2')
 
     if args["--reorder"]:
         load_data(open(args["--reorder"], "r").read())
